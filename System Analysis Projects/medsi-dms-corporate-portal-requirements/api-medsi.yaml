@@ -1,0 +1,182 @@
+openapi: 3.0.3
+info:
+  title: MEDSI Corporate Portal - DMS HR Analytics API
+  version: 1.0.0
+  description: >
+    API для получения сводной статистики по обращениям сотрудников по программам ДМС
+    для HR-портала корпоративных клиентов МЕДСИ.
+
+servers:
+  - url: https://portal.medsi.ru
+
+paths:
+  /api/hr/dms-usage/search:
+    post:
+      tags:
+        - HR DMS Analytics
+      summary: Получить сводную статистику по обращениям ДМС
+      description: >
+        Возвращает агрегированную статистику и операционные KPI по обращениям сотрудников
+        по программам ДМС за выбранный период с учетом фильтров.
+      operationId: getDmsUsageSummary
+      requestBody:
+        required: true
+        description: Параметры фильтрации статистики по обращениям ДМС.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DmsUsageSearchRequest'
+      responses:
+        '200':
+          description: Успешное получение сводной статистики по обращениям ДМС.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DmsUsageSummaryResponse'
+        '400':
+          description: Ошибка параметров запроса (не заполнены обязательные поля, некорректный формат дат или значения фильтров).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '403':
+          description: Недостаточно прав для просмотра данных по выбранным параметрам.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalErrorResponse'
+
+components:
+  schemas:
+    DmsUsageSearchRequest:
+      type: object
+      required:
+        - dateFrom
+        - dateTo
+      properties:
+        dateFrom:
+          type: string
+          description: Дата начала периода, за который формируется статистика. На UI по умолчанию подставляется первый день текущего месяца.
+          example: "01-01-2026"
+          pattern: '^\d{2}-\d{2}-\d{4}$'
+        dateTo:
+          type: string
+          description: Дата окончания периода (включительно), за который формируется статистика.
+          example: "31-01-2026"
+          pattern: '^\d{2}-\d{2}-\d{4}$'
+        departmentId:
+          type: string
+          description: >
+            Идентификатор подразделения (филиал, офис, департамент). 
+            Если не указан, статистика рассчитывается по всем доступным подразделениям. На UI по умолчанию подставляется текущая дата.
+          maxLength: 100
+          example: "dep-001"
+        serviceTypeCode:
+          type: string
+          description: >
+            Код типа услуги по ДМС (консультация, диагностика, стационар и т.п.). 
+            Если не указан, учитываются все типы услуг.
+          maxLength: 50
+          example: "CONSULT"
+        decisionStatus:
+          type: string
+          description: Статус обращения по ДМС. Если не передан, по умолчанию используется ALL.
+          enum:
+            - APPROVED
+            - REJECTED
+            - ALL
+          default: ALL
+          example: "APPROVED"
+
+    DmsUsageSummaryResponse:
+      type: object
+      properties:
+        summary:
+          type: object
+          description: Сводные показатели по обращениям ДМС.
+          properties:
+            totalRequests:
+              type: integer
+              format: int32
+              minimum: 0
+              description: Общее количество обращений по ДМС за указанный период с учетом примененных фильтров.
+              example: 125
+            approvedRequests:
+              type: integer
+              format: int32
+              minimum: 0
+              description: Количество одобренных обращений по ДМС.
+              example: 110
+            rejectedRequests:
+              type: integer
+              format: int32
+              minimum: 0
+              description: Количество отказов по обращениям ДМС.
+              example: 15
+            totalPaidAmount:
+              type: number
+              format: double
+              description: Суммарная стоимость оплаченных услуг по ДМС за период (в рублях).
+              example: 350000.50
+            utilizationRate:
+              type: number
+              format: double
+              nullable: true
+              description: >
+                Доля сотрудников, использовавших ДМС за период (utilization rate), в процентах (0.0–100.0).
+              example: 42.0
+            avgClaimCost:
+              type: number
+              format: double
+              nullable: true
+              description: Средняя стоимость одного обращения по ДМС за период (в рублях).
+              example: 2800.00
+            limitUsagePercent:
+              type: number
+              format: double
+              nullable: true
+              description: Процент использования лимита по программам ДМС за выбранный период (0.0–100.0).
+              example: 76.3
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Текст сообщения об ошибке.
+          example: "Недостаточно прав для просмотра данных по выбранным параметрам"
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Общее описание ошибки параметров запроса.
+          example: "Некорректные параметры запроса"
+        details:
+          type: array
+          description: Детализированное описание нарушений (список ошибок валидации).
+          items:
+            type: string
+          example:
+            - "dateFrom обязателен"
+            - "dateTo обязателен"
+            - "dateFrom/dateTo должны быть в формате DD-MM-YYYY"
+
+    InternalErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Текст сообщения о внутренней ошибке сервера.
+          example: "Внутренняя ошибка сервера"
+        requestId:
+          type: string
+          description: Идентификатор запроса во внутренней системе логирования.
+          example: "abc123"
