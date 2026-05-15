@@ -43,7 +43,7 @@
 
 ER-диаграмма модели данных:
 
-![ER Diagram](docs/er_diagram.png)
+![ER Diagram](ER/ER-диаграмма.png)
 
 ## Этапы работы
 
@@ -177,15 +177,15 @@ sql/03_analytics_queries.sql
 
 ### Sales Overview
 
-![Sales Overview](dashboard/screenshots/sales_overview.png)
+![Sales Overview](dashboard/sales_overview.png)
 
 ### Delivery Analytics
 
-![Delivery Analytics](dashboard/screenshots/delivery_analytics.png)
+![Delivery Analytics](dashboard/delivery_analytics.png)
 
 ### Customer Experience and Products
 
-![Customer Experience and Products](dashboard/screenshots/customer_experience_products.png)
+![Customer Experience and Products](dashboard/customer_experience_products.png)
 
 ## Ключевые метрики
 
